@@ -43,6 +43,19 @@ public class AnswerController {
     }
 
     @PreAuthorize("isAuthenticated()")
+    @PostMapping("/create/{id}")
+    public String createAnswer(Model model, @PathVariable("id") Integer id, @Valid AnswerForm answerForm, Principal principal, BindingResult bindingResult) {
+        Question question = this.questionService.getQuestion(id);
+        SiteUser siteUser = this.userService.getUser(principal.getName());
+        if (bindingResult.hasErrors()) {
+            model.addAttribute("question", question);
+            return "question_detail";
+        }
+        Answer answer = this.answerService.create(question, answerForm.getContent(), siteUser);
+        return String.format("redirect:/question/detail/%s#answer_%s", answer.getQuestion().getId(), answer.getId());
+    }
+
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/modify/{id}")
     public String answerModify(AnswerForm answerForm, @PathVariable("id") Integer id, Principal principal) {
         Answer answer = this.answerService.getAnswer(id);
@@ -64,7 +77,7 @@ public class AnswerController {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "not authorized");
         }
         this.answerService.modify(answer, answerForm.getContent());
-        return String.format("redirect:/question/detail/%s", answer.getQuestion().getId());
+        return String.format("redirect:/question/detail/%s#answer_%s", answer.getQuestion().getId(), answer.getId());
     }
 
     @PreAuthorize("isAuthenticated()")
@@ -84,7 +97,7 @@ public class AnswerController {
         Answer answer = this.answerService.getAnswer(id);
         SiteUser siteUser = this.userService.getUser(principal.getName());
         this.answerService.vote(answer, siteUser);
-        return String.format("redirect:/question/detail/%s", answer.getQuestion().getId());
+        return String.format("redirect:/question/detail/%s#answer_%s", answer.getQuestion().getId(), answer.getId());
     }
 
 }
